@@ -1,0 +1,18 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+/*.egg-info
+/dist
+/build
+/sdist
+
+# Mr Developer
+.vscode/
+.project
+
+# Package specific
+/cache/*
+/scraped_data/*
