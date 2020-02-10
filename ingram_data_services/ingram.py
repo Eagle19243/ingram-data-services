@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -13,16 +14,14 @@ compliance with your data license and maintain data integrity.
 
 import argparse
 import configparser
-import fnmatch
 import logging
 import multiprocessing
 import os
-import sys
 from zipfile import ZipFile
 
-from . import utils
-from .__version__ import __version__
-from .ftp import IngramFTP
+from ingram_data_services.utils import get_files_matching
+from ingram_data_services.__version__ import __version__
+from ingram_data_services.ftp import IngramFTP
 
 logger = logging.getLogger(__name__)
 
@@ -139,19 +138,23 @@ def main():
 
     # Unzip data files
     logger.info("Unzip cover zips ...")
-    cover_zips = utils.get_files_matching(
+    cover_zips = get_files_matching(
         os.path.join(download_dir, "Imageswk"), "*.zip"
     )
     # for z in cover_zips:
     #     extract_cover_zip(z, os.path.join(working_dir, "covers"))
 
-    covers = utils.get_files_matching(os.path.join(working_dir, "covers"), "*.jpg")
+    covers = get_files_matching(os.path.join(working_dir, "covers"), "*.jpg")
     logger.info(f"Number of covers: {len(covers)}")
 
     # Unzip data files
     logger.info("Unzip ONIX zips ...")
-    data_zips = utils.get_files_matching(os.path.join(download_dir, "ONIX"), "*.zip")
+    data_zips = get_files_matching(os.path.join(download_dir, "ONIX"), "*.zip")
     for z in data_zips:
         extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
         extract_dir = os.path.join(working_dir, extract_dir)
         extract_zip(z, extract_dir)
+
+
+if __name__ == '__main__':
+    main()
