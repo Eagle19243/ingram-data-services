@@ -18,6 +18,8 @@ import logging
 import multiprocessing
 import os
 from zipfile import ZipFile
+from operator import attrgetter
+from argparse import HelpFormatter
 
 from ingram_data_services.utils import get_files_matching
 from ingram_data_services.__version__ import __version__
@@ -31,19 +33,44 @@ passwd = None
 pool = None
 
 
-def get_parser():
+class SortingHelpFormatter(HelpFormatter):
+    def add_arguments(self, actions):
+        actions = sorted(actions, key=attrgetter('option_strings'))
+        super(SortingHelpFormatter, self).add_arguments(actions)
+
+
+def get_args():
     """Returns the Argument Parser."""
     parser = argparse.ArgumentParser(
-        description="Login and pull data from Ingram's FTP server"
+        description="Login and pull data from Ingram's FTP server",
+        usage="ingram-data-services -u USER -p PASSWORD [--log-file LOG_FILE]",
+        formatter_class=SortingHelpFormatter
     )
-
     parser.add_argument(
+        "-v",
         "--version",
         action="version",
-        version="%(prog)s {version}".format(version=__version__),
+        version="%(prog)s {version}".format(version=__version__)
+    )
+    parser.add_argument(
+        "--log-file",
+        help="location to log the history"
+    )
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-u",
+        "--user",
+        help="username for Ingram's FTP server",
+        required=True
+    )
+    required.add_argument(
+        "-p",
+        "--password",
+        help="password for Ingram's FTP server",
+        required=True
     )
 
-    return parser
+    return parser.parse_args()
 
 
 def get_config():
@@ -120,14 +147,14 @@ def main():
     global host, user, passwd, pool
 
     # Ensure proper command line usage
-    args = get_parser().parse_args()
+    args = get_args()
 
     # Read our config file
     config = get_config()
 
     host = config.get("default", "host")
-    user = config.get("default", "user")
-    passwd = config.get("default", "passwd")
+    user = args.user
+    passwd = args.password
 
     download_dir = os.path.expanduser(config.get("default", "download_dir"))
     concurrent_downloads = config.getint("default", "concurrent_downloads")
