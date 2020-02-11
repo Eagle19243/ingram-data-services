@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import os
 from ftplib import FTP
-
-logger = logging.getLogger(__name__)
+from ingram_data_services import logger
 
 
 class RemoteFile:

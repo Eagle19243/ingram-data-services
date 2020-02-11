@@ -16,8 +16,6 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
 
     [default]
     host=ftptest.ingramcontent.com
-    user=USER
-    passwd=PASS
     download_dir=~/finderscope/ftp_data
     working_dir=~/finderscope/working
     concurrent_downloads=4
@@ -25,7 +23,21 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
 
 ## Usage
 
-    ingram-data-services
+    usage: ingram-data-services -u USER -p PASSWORD [--log-file LOG_FILE]
+
+    Login and pull data from Ingram's FTP server
+
+    optional arguments:
+      --log-file LOG_FILE   location to log the history
+      -h, --help            show this help message and exit
+      -v, --version         show program's version number and exit
+
+    required arguments:
+      -p PASSWORD, --password PASSWORD
+                            password for Ingram's FTP server
+      -u USER, --user USER  username for Ingram's FTP server
+
+    example: ingram-data-services -u user -p password --log-file ~/finderscope/logs
 
 
 ## Resources

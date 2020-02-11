@@ -14,7 +14,7 @@ compliance with your data license and maintain data integrity.
 
 import argparse
 import configparser
-import logging
+import logging.handlers
 import multiprocessing
 import os
 from zipfile import ZipFile
@@ -24,8 +24,7 @@ from argparse import HelpFormatter
 from ingram_data_services.utils import get_files_matching
 from ingram_data_services.__version__ import __version__
 from ingram_data_services.ftp import IngramFTP
-
-logger = logging.getLogger(__name__)
+from ingram_data_services import logger
 
 host = None
 user = None
@@ -143,6 +142,32 @@ def extract_zip(file, target_dir):
             zf.extractall(target_dir)
 
 
+def setup_logger(log_dir):
+    logger.setLevel(logging.DEBUG)
+
+    # Create logging format
+    msg_fmt = "[%(levelname)s] [%(asctime)s] [%(name)s] %(message)s"
+    date_fmt = "%Y-%m-%d %I:%M:%S %p"
+    formatter = logging.Formatter(msg_fmt, date_fmt)
+
+    # Create file handler
+    logfile = os.path.expanduser(os.path.join(log_dir, "ingram-data-services.log"))
+    if not os.path.exists(os.path.dirname(logfile)):
+        os.makedirs(os.path.dirname(logfile))
+    fh = logging.handlers.RotatingFileHandler(logfile, maxBytes=10485760, backupCount=5)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+
+    # Create console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+
+    # Add logging handlers
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+
 def main():
     global host, user, passwd, pool
 
@@ -155,6 +180,7 @@ def main():
     host = config.get("default", "host")
     user = args.user
     passwd = args.password
+    setup_logger(args.log_file if args.log_file else "~/finderscope/logs")
 
     download_dir = os.path.expanduser(config.get("default", "download_dir"))
     concurrent_downloads = config.getint("default", "concurrent_downloads")
