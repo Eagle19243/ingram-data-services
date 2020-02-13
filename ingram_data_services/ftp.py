@@ -37,7 +37,7 @@ class IngramFTP(FTP):
         """Download a file."""
         # Create the target target_dir
         target_dir = os.path.dirname(local_file)
-        if not os.path.isdir(target_dir):
+        if not os.path.exists(target_dir):
             os.makedirs(target_dir)
 
         # If we don't have the file, download it
