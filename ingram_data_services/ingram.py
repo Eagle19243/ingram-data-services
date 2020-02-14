@@ -106,13 +106,15 @@ def download_data_files(download_dir, concurrent_downloads):
         logger.info(f"Connected to {host}...")
         logger.info(f"Welcome message: {ftp.getwelcome()}")
 
-        cover_paths = ftp.get_cover_files(folder="J400w")
+        cover_paths = ftp.get_cover_files(folder="J648h")
         onix_paths = ftp.get_onix_files()
+        onix_bklst_paths = ftp.get_onix_bklst_files()
         ref_paths = ftp.get_reference_files()
 
         # Assemble our tuple of args for the download method
         cover_paths = [(p, download_dir) for p in cover_paths]
         onix_paths = [(p, download_dir) for p in onix_paths]
+        onix_bklst_paths = [(p, download_dir) for p in onix_bklst_paths]
         ref_paths = [(p, download_dir) for p in ref_paths]
 
     # Process the downloads
@@ -120,7 +122,8 @@ def download_data_files(download_dir, concurrent_downloads):
     pool = multiprocessing.Pool(processes=concurrent_downloads)
     pool.starmap(download_file, cover_paths)
     pool.starmap(download_file, onix_paths)
-    pool.starmap(download_file, ref_paths)
+    pool.starmap(download_file, onix_bklst_paths)
+    # pool.starmap(download_file, ref_paths)
     pool.close()
     pool.join()
 

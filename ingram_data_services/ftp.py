@@ -67,13 +67,23 @@ class IngramFTP(FTP):
         logger.info(f"Get ONIX zip files ...")
         paths = []
         onix_dir = "/ONIX"
-        dirs = ["Active", "Extended", "NotAvailable"]
+        dirs = ["Active", "Active_Split", "Extended", "Extended_Split", "NotAvailable", "NotAvailable_Split"]
         for d in dirs:
             current_dir = os.path.join(onix_dir, d)
             for name, facts in self.mlsd(current_dir, ["type"]):
                 file = RemoteFile(os.path.join(current_dir, name), facts)
                 if ".zip" in file.name and file.is_file:
                     paths.append(file.path)
+        return paths
+
+    def get_onix_bklst_files(self):
+        logger.info(f"Get ONIX_BKLST zip files ...")
+        paths = []
+        onix_bklst_dir = "/ONIX_BKLST"
+        for name, facts in self.mlsd(onix_bklst_dir, ["type"]):
+            file = RemoteFile(os.path.join(onix_bklst_dir, name), facts)
+            if ".zip" in file.name and file.is_file:
+                paths.append(file.path)
         return paths
 
     def get_reference_files(self):
