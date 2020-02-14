@@ -52,7 +52,7 @@ def get_args():
         version="%(prog)s {version}".format(version=__version__)
     )
     parser.add_argument(
-        "--log-dir",
+        "--log-file",
         help="location to log the history"
     )
     required = parser.add_argument_group("required arguments")
@@ -145,7 +145,7 @@ def extract_zip(file, target_dir):
             zf.extractall(target_dir)
 
 
-def setup_logger(log_dir):
+def setup_logger(log_file):
     """Setup logger"""
     logger.setLevel(logging.DEBUG)
 
@@ -155,7 +155,7 @@ def setup_logger(log_dir):
     formatter = logging.Formatter(msg_fmt, date_fmt)
 
     # Create file handler
-    logfile = os.path.expanduser(os.path.join(log_dir, "ingram-data-services.log"))
+    logfile = os.path.expanduser(log_file)
     if not os.path.exists(os.path.dirname(logfile)):
         os.makedirs(os.path.dirname(logfile))
     fh = logging.handlers.RotatingFileHandler(logfile, maxBytes=10485760, backupCount=5)
@@ -184,9 +184,9 @@ def main():
     host = config.get("default", "host")
     user = args.user
     passwd = args.password
-    log_dir = args.log_dir if args.log_dir else "~/finderscope/logs"
-    setup_logger(log_dir)
-    set_log_dir(log_dir)
+    log_file = args.log_file if args.log_file else "~/finderscope/logs/ingram-data-services.log"
+    setup_logger(log_file)
+    set_log_dir(os.path.dirname(log_file))
 
     download_dir = os.path.expanduser(config.get("default", "download_dir"))
     concurrent_downloads = config.getint("default", "concurrent_downloads")

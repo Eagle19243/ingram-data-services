@@ -15,7 +15,7 @@ pixel image = 35KB.
 Create a `~/finderscope/config/ingram-data-services.cfg` file with the following contents:
 
     [default]
-    host=ftptest.ingramcontent.com
+    host=ftp.ingramcontent.com
     download_dir=~/finderscope/ftp_data
     working_dir=~/finderscope/working
     concurrent_downloads=4
@@ -37,7 +37,7 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
                             password for Ingram's FTP server
       -u USER, --user USER  username for Ingram's FTP server
 
-    example: ingram-data-services -u user -p password --log-file ~/finderscope/logs
+    example: ingram-data-services -u user -p password --log-file ~/finderscope/logs/ingram-data-services.log
 
 
 ## Resources
