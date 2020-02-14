@@ -20,6 +20,14 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
     working_dir=~/finderscope/working
     concurrent_downloads=4
 
+## Requirements
+
+* Python 3.6, 3.7, 3.8
+
+## Installation
+
+    python setup.py install
+
 
 ## Usage
 

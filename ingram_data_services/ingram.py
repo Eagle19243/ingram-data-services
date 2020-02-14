@@ -196,7 +196,7 @@ def main():
     # Download data files
     download_data_files(download_dir, concurrent_downloads)
 
-    # Unzip data files
+    # Unzip cover files
     logger.info("Unzip cover zips ...")
     cover_zips = get_files_matching(
         os.path.join(download_dir, "Imageswk"), "*.zip"
@@ -207,9 +207,17 @@ def main():
     covers = get_files_matching(os.path.join(working_dir, "covers"), "*.jpg")
     logger.info(f"Number of covers: {len(covers)}")
 
-    # Unzip data files
+    # Unzip onix files
     logger.info("Unzip ONIX zips ...")
     data_zips = get_files_matching(os.path.join(download_dir, "ONIX"), "*.zip")
+    for z in data_zips:
+        extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
+        extract_dir = os.path.join(working_dir, extract_dir)
+        extract_zip(z, extract_dir)
+
+    # Unzip onix backlist files
+    logger.info("Unzip ONIX_BKLST zips ...")
+    data_zips = get_files_matching(os.path.join(download_dir, "ONIX_BKLST"), "*.zip")
     for z in data_zips:
         extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
         extract_dir = os.path.join(working_dir, extract_dir)
