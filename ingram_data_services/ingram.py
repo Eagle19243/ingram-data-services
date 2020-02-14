@@ -185,6 +185,7 @@ def main():
     user = args.user
     passwd = args.password
     log_file = args.log_file if args.log_file else "~/finderscope/logs/ingram-data-services.log"
+
     setup_logger(log_file)
     set_log_dir(os.path.dirname(log_file))
 
@@ -200,8 +201,8 @@ def main():
     cover_zips = get_files_matching(
         os.path.join(download_dir, "Imageswk"), "*.zip"
     )
-    # for z in cover_zips:
-    #     extract_cover_zip(z, os.path.join(working_dir, "covers"))
+    for z in cover_zips:
+        extract_cover_zip(z, os.path.join(working_dir, "covers"))
 
     covers = get_files_matching(os.path.join(working_dir, "covers"), "*.jpg")
     logger.info(f"Number of covers: {len(covers)}")
