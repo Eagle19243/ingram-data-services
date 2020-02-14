@@ -3,6 +3,7 @@
 import os
 from ftplib import FTP
 from ingram_data_services import logger
+from ingram_data_services.utils import save_history, is_downloaded
 
 
 class RemoteFile:
@@ -42,11 +43,15 @@ class IngramFTP(FTP):
 
         # If we don't have the file, download it
         target_filename = os.path.join(target_dir, os.path.basename(remote_file))
-        if not os.path.exists(target_filename) or force is True:
+        remote_file_size = self.size(remote_file)
+        modified_date = self.voidcmd(f"MDTM {remote_file}")[4:].strip()
+
+        if not is_downloaded(target_filename, remote_file_size, modified_date) or force is True:
             logger.info(f'Downloading "{remote_file}" => "{target_filename}" ...')
             with open(target_filename, "wb") as fp:
                 self.retrbinary(f"RETR {remote_file}", fp.write)
-            # logger.info(f'"{target_filename}" download complete')
+            logger.info(f'"{target_filename}" download complete')
+            save_history(target_filename, remote_file_size, modified_date)
 
     def get_cover_files(self, folder):
         logger.info(f"Get cover zips from folder {folder} ...")

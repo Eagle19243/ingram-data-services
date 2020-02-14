@@ -21,7 +21,7 @@ from zipfile import ZipFile
 from operator import attrgetter
 from argparse import HelpFormatter
 
-from ingram_data_services.utils import get_files_matching
+from ingram_data_services.utils import get_files_matching, set_log_dir
 from ingram_data_services.__version__ import __version__
 from ingram_data_services.ftp import IngramFTP
 from ingram_data_services import logger
@@ -52,7 +52,7 @@ def get_args():
         version="%(prog)s {version}".format(version=__version__)
     )
     parser.add_argument(
-        "--log-file",
+        "--log-dir",
         help="location to log the history"
     )
     required = parser.add_argument_group("required arguments")
@@ -103,8 +103,8 @@ def download_file(remote_file, download_dir):
 def download_data_files(download_dir, concurrent_downloads):
     logger.info("Download Ingram data files ...")
     with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
-        # logger.info(f"Connected to {host}...")
-        # logger.info(f"Welcome message: {ftp.getwelcome()}")
+        logger.info(f"Connected to {host}...")
+        logger.info(f"Welcome message: {ftp.getwelcome()}")
 
         cover_paths = ftp.get_cover_files(folder="J400w")
         onix_paths = ftp.get_onix_files()
@@ -143,6 +143,7 @@ def extract_zip(file, target_dir):
 
 
 def setup_logger(log_dir):
+    """Setup logger"""
     logger.setLevel(logging.DEBUG)
 
     # Create logging format
@@ -180,7 +181,9 @@ def main():
     host = config.get("default", "host")
     user = args.user
     passwd = args.password
-    setup_logger(args.log_file if args.log_file else "~/finderscope/logs")
+    log_dir = args.log_dir if args.log_dir else "~/finderscope/logs"
+    setup_logger(log_dir)
+    set_log_dir(log_dir)
 
     download_dir = os.path.expanduser(config.get("default", "download_dir"))
     concurrent_downloads = config.getint("default", "concurrent_downloads")
