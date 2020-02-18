@@ -3,6 +3,8 @@
 import os
 from ftplib import FTP
 
+from dateutil import parser, tz
+
 from ingram_data_services import logger
 from ingram_data_services.utils import save_history
 
@@ -34,6 +36,17 @@ class RemoteFile:
 
 class IngramFTP(FTP):
     """Extend the default FTP class."""
+
+    def get_modified_date(self, remote_file):
+        """Return the modified date"""
+        timestamp = self.voidcmd(f"MDTM {remote_file}")[4:].strip()
+        # Strip the excess data
+        timestamp = timestamp[:14]
+        utc = tz.gettz('UTC')
+        dt = parser.parse(timestamp).replace(tzinfo=utc)
+        # Seems Ingram's FTP is on EST time
+        est = tz.gettz('EST')
+        return dt.astimezone(est)
 
     def is_downloaded(self, remote_file, local_file):
         """Determine if we need to download the file."""

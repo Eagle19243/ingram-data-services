@@ -111,6 +111,7 @@ def download_file(remote_file, download_dir):
     with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
         try:
             ftp.download_file(remote_file, local_file)
+            # print(ftp.get_modified_date(remote_file))
         except KeyboardInterrupt:
             pool.terminate()
 
@@ -186,6 +187,8 @@ def main():
 
     # Download data files
     download_data_files(download_dir)
+
+
 
     return
 

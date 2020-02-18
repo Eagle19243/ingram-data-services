@@ -10,4 +10,4 @@ __author__ = "Tim Santor"
 __author_email__ = "tsantor@xstudios.agency"
 __license__ = "MIT"
 __keywords__ = []
-__install_requires__ = []
+__install_requires__ = ["python-dateutil"]
