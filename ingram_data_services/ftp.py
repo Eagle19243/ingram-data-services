@@ -35,27 +35,35 @@ class RemoteFile:
 class IngramFTP(FTP):
     """Extend the default FTP class."""
 
+    def is_downloaded(self, remote_file, local_file):
+        """Determine if we need to download the file."""
+        # If the file doesn't exist, then download it
+        if not os.path.exists(local_file):
+            return False
+
+        # If we get here, we have a local file so let's check the size
+        remote_size = self.size(remote_file)
+        local_size = os.path.getsize(local_file)
+        if local_size != remote_size:
+            return False
+
+        # Passed both exists and filesize checks, assume we have it
+        return True
+
     def download_file(self, remote_file, local_file, force=False):
         """Download a file."""
         # Create the target target_dir
-        target_dir = os.path.dirname(local_file)
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(local_file), exist_ok=True)
 
-        # If we don't have the file, download it
-        target_filename = os.path.join(target_dir, os.path.basename(remote_file))
-        remote_file_size = self.size(remote_file)
-        modified_date = self.voidcmd(f"MDTM {remote_file}")[4:].strip()
+        # remote_file_size = self.size(remote_file)
+        # modified_date = self.voidcmd(f"MDTM {remote_file}")[4:].strip()
 
-        if (
-            not is_downloaded(target_filename, remote_file_size, modified_date)
-            or force is True
-        ):
-            logger.info(f'Downloading "{remote_file}" => "{target_filename}" ...')
-            with open(target_filename, "wb") as fp:
+        if not self.is_downloaded(remote_file, local_file) or force is True:
+            logger.info(f'Downloading "{remote_file}" => "{local_file}" ...')
+            with open(local_file, "wb") as fp:
                 self.retrbinary(f"RETR {remote_file}", fp.write)
-            logger.info(f'"{target_filename}" download complete')
-            save_history(target_filename, remote_file_size, modified_date)
+            logger.info(f'"{local_file}" download complete')
+            # save_history(local_file, remote_file_size, modified_date)
 
     def get_cover_files(self, folder):
         logger.info(f"Get cover zips from folder {folder} ...")

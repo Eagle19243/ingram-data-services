@@ -24,7 +24,7 @@ from zipfile import ZipFile
 from ingram_data_services import logger
 from ingram_data_services.__version__ import __version__
 from ingram_data_services.ftp import IngramFTP
-from ingram_data_services.utils import get_files_matching, set_log_dir
+from ingram_data_services.utils import get_files_matching, get_local_path, set_log_dir
 
 host = None
 user = None
@@ -77,11 +77,7 @@ def get_config():
 def download_file(remote_file, download_dir):
     """Helper to allow multiprocessing."""
     # Create the local file path
-    local_file = os.path.join(
-        download_dir,
-        os.path.dirname(remote_file).lstrip("/"),
-        os.path.basename(remote_file),
-    )
+    local_file = get_local_path(remote_file, download_dir)
 
     # We can't download multiple files from FTP at once, so we need to
     # create an FTP instance and login for each download
@@ -92,7 +88,7 @@ def download_file(remote_file, download_dir):
             pool.terminate()
 
 
-def download_data_files(download_dir, concurrent_downloads):
+def download_data_files(download_dir):
     logger.info("Download Ingram data files ...")
     with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
         logger.info(f"Connected to {host}...")
@@ -126,7 +122,10 @@ def extract_cover_zip(file, target_dir):
         filenames = zf.namelist()
         for f in filenames:
             subdir, _ = os.path.splitext(f)
-            zf.extract(f, os.path.join(target_dir, subdir[-4:]))
+            filepath = os.path.join(target_dir, subdir[-4:], f)
+            # We only extract if the file doesn't exist
+            if not os.path.exists(filepath):
+                zf.extract(f, os.path.join(target_dir, subdir[-4:]))
 
 
 def extract_zip(file, target_dir):
@@ -182,12 +181,11 @@ def main():
     set_log_dir(os.path.dirname(log_file))
 
     download_dir = os.path.expanduser(config.get(section, "download_dir"))
-    concurrent_downloads = config.getint(section, "concurrent_downloads")
     working_dir = os.path.expanduser(config.get(section, "working_dir"))
     cover_size = config.get(section, "cover_size")
 
     # Download data files
-    download_data_files(download_dir, concurrent_downloads)
+    download_data_files(download_dir)
 
     # Unzip cover files
     logger.info("Unzip cover zips ...")
@@ -195,12 +193,13 @@ def main():
 
     cover_args = []
     for z in cover_zips:
-        # extract_cover_zip(z, os.path.join(working_dir, "covers"))
-        cover_args.append((z, os.path.join(working_dir, "covers")))
+        cover_args.append((z, os.path.join(working_dir, "Imageswk", cover_size)))
 
     # Use multiprocessing to unzip multiple files at once
     with multiprocessing.Pool() as pool:
         pool.starmap(extract_cover_zip, cover_args)
+
+    return
 
     # Unzip onix files
     logger.info("Unzip ONIX zips ...")
