@@ -110,14 +110,13 @@ def download_data_files(download_dir, concurrent_downloads):
         ref_paths = [(p, download_dir) for p in ref_paths]
 
     # Process the downloads
-    logger.debug("Concurrent downloads: %s", concurrent_downloads)
-    pool = multiprocessing.Pool(processes=concurrent_downloads)
-    pool.starmap(download_file, cover_paths)
-    pool.starmap(download_file, onix_paths)
-    pool.starmap(download_file, onix_bklst_paths)
-    # pool.starmap(download_file, ref_paths)
-    pool.close()
-    pool.join()
+    with multiprocessing.Pool() as pool:
+        pool.starmap(download_file, cover_paths)
+        pool.starmap(download_file, onix_paths)
+        pool.starmap(download_file, onix_bklst_paths)
+        # pool.starmap(download_file, ref_paths)
+    # pool.close()
+    # pool.join()
 
 
 def extract_cover_zip(file, target_dir):
@@ -132,9 +131,8 @@ def extract_cover_zip(file, target_dir):
 
 def extract_zip(file, target_dir):
     """Extract files from zip"""
-    if not os.path.isdir(target_dir):
-        with ZipFile(file, "r") as zf:
-            zf.extractall(target_dir)
+    with ZipFile(file, "r") as zf:
+        zf.extractall(target_dir)
 
 
 def setup_logger(log_file):
@@ -194,27 +192,37 @@ def main():
     # Unzip cover files
     logger.info("Unzip cover zips ...")
     cover_zips = get_files_matching(os.path.join(download_dir, "Imageswk"), "*.zip")
-    for z in cover_zips:
-        extract_cover_zip(z, os.path.join(working_dir, "covers"))
 
-    covers = get_files_matching(os.path.join(working_dir, "covers"), "*.jpg")
-    logger.info(f"Number of covers: {len(covers)}")
+    cover_args = []
+    for z in cover_zips:
+        # extract_cover_zip(z, os.path.join(working_dir, "covers"))
+        cover_args.append((z, os.path.join(working_dir, "covers")))
+
+    # Use multiprocessing to unzip multiple files at once
+    with multiprocessing.Pool() as pool:
+        pool.starmap(extract_cover_zip, cover_args)
 
     # Unzip onix files
     logger.info("Unzip ONIX zips ...")
     data_zips = get_files_matching(os.path.join(download_dir, "ONIX"), "*.zip")
+
+    zip_args = []
     for z in data_zips:
         extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
         extract_dir = os.path.join(working_dir, extract_dir)
-        extract_zip(z, extract_dir)
+        zip_args.append((z, extract_dir))
+
+    # Use multiprocessing to unzip multiple files at once
+    with multiprocessing.Pool() as pool:
+        pool.starmap(extract_zip, zip_args)
 
     # Unzip onix backlist files
-    logger.info("Unzip ONIX_BKLST zips ...")
-    data_zips = get_files_matching(os.path.join(download_dir, "ONIX_BKLST"), "*.zip")
-    for z in data_zips:
-        extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
-        extract_dir = os.path.join(working_dir, extract_dir)
-        extract_zip(z, extract_dir)
+    # logger.info("Unzip ONIX_BKLST zips ...")
+    # data_zips = get_files_matching(os.path.join(download_dir, "ONIX_BKLST"), "*.zip")
+    # for z in data_zips:
+    #     extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
+    #     extract_dir = os.path.join(working_dir, extract_dir)
+    #     extract_zip(z, extract_dir)
 
 
 if __name__ == "__main__":
