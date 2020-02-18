@@ -2,8 +2,9 @@
 
 import os
 from ftplib import FTP
+
 from ingram_data_services import logger
-from ingram_data_services.utils import save_history, is_downloaded
+from ingram_data_services.utils import is_downloaded, save_history
 
 
 class RemoteFile:
@@ -39,14 +40,17 @@ class IngramFTP(FTP):
         # Create the target target_dir
         target_dir = os.path.dirname(local_file)
         if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
+            os.makedirs(target_dir, exist_ok=True)
 
         # If we don't have the file, download it
         target_filename = os.path.join(target_dir, os.path.basename(remote_file))
         remote_file_size = self.size(remote_file)
         modified_date = self.voidcmd(f"MDTM {remote_file}")[4:].strip()
 
-        if not is_downloaded(target_filename, remote_file_size, modified_date) or force is True:
+        if (
+            not is_downloaded(target_filename, remote_file_size, modified_date)
+            or force is True
+        ):
             logger.info(f'Downloading "{remote_file}" => "{target_filename}" ...')
             with open(target_filename, "wb") as fp:
                 self.retrbinary(f"RETR {remote_file}", fp.write)
@@ -67,7 +71,14 @@ class IngramFTP(FTP):
         logger.info(f"Get ONIX zip files ...")
         paths = []
         onix_dir = "/ONIX"
-        dirs = ["Active", "Active_Split", "Extended", "Extended_Split", "NotAvailable", "NotAvailable_Split"]
+        dirs = [
+            "Active",
+            "Active_Split",
+            "Extended",
+            "Extended_Split",
+            "NotAvailable",
+            "NotAvailable_Split",
+        ]
         for d in dirs:
             current_dir = os.path.join(onix_dir, d)
             for name, facts in self.mlsd(current_dir, ["type"]):

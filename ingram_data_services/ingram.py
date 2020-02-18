@@ -17,24 +17,25 @@ import configparser
 import logging.handlers
 import multiprocessing
 import os
-from zipfile import ZipFile
-from operator import attrgetter
 from argparse import HelpFormatter
+from operator import attrgetter
+from zipfile import ZipFile
 
-from ingram_data_services.utils import get_files_matching, set_log_dir
+from ingram_data_services import logger
 from ingram_data_services.__version__ import __version__
 from ingram_data_services.ftp import IngramFTP
-from ingram_data_services import logger
+from ingram_data_services.utils import get_files_matching, set_log_dir
 
 host = None
 user = None
 passwd = None
 pool = None
+cover_size = None
 
 
 class SortingHelpFormatter(HelpFormatter):
     def add_arguments(self, actions):
-        actions = sorted(actions, key=attrgetter('option_strings'))
+        actions = sorted(actions, key=attrgetter("option_strings"))
         super(SortingHelpFormatter, self).add_arguments(actions)
 
 
@@ -42,31 +43,22 @@ def get_args():
     """Returns the Argument Parser."""
     parser = argparse.ArgumentParser(
         description="Login and pull data from Ingram's FTP server",
-        usage="ingram-data-services -u USER -p PASSWORD [--log-file LOG_FILE]",
-        formatter_class=SortingHelpFormatter
+        usage="ingram-data-services [--config-section CONFIG_SECTION]",
+        formatter_class=SortingHelpFormatter,
     )
     parser.add_argument(
         "-v",
         "--version",
         action="version",
-        version="%(prog)s {version}".format(version=__version__)
+        version="%(prog)s {version}".format(version=__version__),
     )
     parser.add_argument(
         "--log-file",
-        help="location to log the history"
+        help="location to log the history",
+        default="~/finderscope/logs/ingram-data-services.log",
     )
-    required = parser.add_argument_group("required arguments")
-    required.add_argument(
-        "-u",
-        "--user",
-        help="username for Ingram's FTP server",
-        required=True
-    )
-    required.add_argument(
-        "-p",
-        "--password",
-        help="password for Ingram's FTP server",
-        required=True
+    parser.add_argument(
+        "--config-section", help="config section to use", default="default"
     )
 
     return parser.parse_args()
@@ -106,7 +98,7 @@ def download_data_files(download_dir, concurrent_downloads):
         logger.info(f"Connected to {host}...")
         logger.info(f"Welcome message: {ftp.getwelcome()}")
 
-        cover_paths = ftp.get_cover_files(folder="J648h")
+        cover_paths = ftp.get_cover_files(folder=cover_size)
         onix_paths = ftp.get_onix_files()
         onix_bklst_paths = ftp.get_onix_bklst_files()
         ref_paths = ftp.get_reference_files()
@@ -173,7 +165,7 @@ def setup_logger(log_file):
 
 
 def main():
-    global host, user, passwd, pool
+    global host, user, passwd, pool, cover_size
 
     # Ensure proper command line usage
     args = get_args()
@@ -181,26 +173,27 @@ def main():
     # Read our config file
     config = get_config()
 
-    host = config.get("default", "host")
-    user = args.user
-    passwd = args.password
-    log_file = args.log_file if args.log_file else "~/finderscope/logs/ingram-data-services.log"
+    section = args.config_section
+    log_file = args.log_file
+
+    host = config.get(section, "host")
+    user = config.get(section, "user")
+    passwd = config.get(section, "passwd")
 
     setup_logger(log_file)
     set_log_dir(os.path.dirname(log_file))
 
-    download_dir = os.path.expanduser(config.get("default", "download_dir"))
-    concurrent_downloads = config.getint("default", "concurrent_downloads")
-    working_dir = os.path.expanduser(config.get("default", "working_dir"))
+    download_dir = os.path.expanduser(config.get(section, "download_dir"))
+    concurrent_downloads = config.getint(section, "concurrent_downloads")
+    working_dir = os.path.expanduser(config.get(section, "working_dir"))
+    cover_size = config.get(section, "cover_size")
 
     # Download data files
     download_data_files(download_dir, concurrent_downloads)
 
     # Unzip cover files
     logger.info("Unzip cover zips ...")
-    cover_zips = get_files_matching(
-        os.path.join(download_dir, "Imageswk"), "*.zip"
-    )
+    cover_zips = get_files_matching(os.path.join(download_dir, "Imageswk"), "*.zip")
     for z in cover_zips:
         extract_cover_zip(z, os.path.join(working_dir, "covers"))
 
@@ -224,5 +217,5 @@ def main():
         extract_zip(z, extract_dir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

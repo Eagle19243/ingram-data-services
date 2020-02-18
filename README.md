@@ -16,13 +16,25 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
 
     [default]
     host=ftp.ingramcontent.com
-    download_dir=~/finderscope/ftp_data
-    working_dir=~/finderscope/working
+    user=USER
+    passwd=PASS
+    cover_size=J648h
+    download_dir=/Volumes/Extreme SSD
+    working_dir=/Volumes/Extreme SSD/working
+    concurrent_downloads=4
+
+    [test]
+    host=ftptest.ingramcontent.com
+    user=USER
+    passwd=PASS
+    cover_size=J400w
+    download_dir=/Volumes/Extreme SSD/TEST
+    working_dir=/Volumes/Extreme SSD/TEST_WORKING
     concurrent_downloads=4
 
 ## Requirements
 
-* Python 3.6, 3.7, 3.8
+* Python 3.7+
 
 ## Installation
 
@@ -31,21 +43,18 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
 
 ## Usage
 
-    usage: ingram-data-services -u USER -p PASSWORD [--log-file LOG_FILE]
+    usage: ingram-data-services [--config-section CONFIG_SECTION]
 
     Login and pull data from Ingram's FTP server
 
     optional arguments:
-      --log-file LOG_FILE   location to log the history
-      -h, --help            show this help message and exit
-      -v, --version         show program's version number and exit
+    --config-section CONFIG_SECTION
+                            config section to use
+    --log-file LOG_FILE   location to log the history
+    -h, --help            show this help message and exit
+    -v, --version         show program's version number and exit
 
-    required arguments:
-      -p PASSWORD, --password PASSWORD
-                            password for Ingram's FTP server
-      -u USER, --user USER  username for Ingram's FTP server
-
-    example: ingram-data-services -u user -p password --log-file ~/finderscope/logs/ingram-data-services.log
+    example: ingram-data-services --config-section test
 
 
 ## Resources
