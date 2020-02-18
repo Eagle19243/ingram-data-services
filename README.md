@@ -21,7 +21,6 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
     cover_size=J648h
     download_dir=/Volumes/Extreme SSD
     working_dir=/Volumes/Extreme SSD/working
-    concurrent_downloads=4
 
     [test]
     host=ftptest.ingramcontent.com
@@ -30,11 +29,12 @@ Create a `~/finderscope/config/ingram-data-services.cfg` file with the following
     cover_size=J400w
     download_dir=/Volumes/Extreme SSD/TEST
     working_dir=/Volumes/Extreme SSD/TEST_WORKING
-    concurrent_downloads=4
+
 
 ## Requirements
 
 * Python 3.7+
+
 
 ## Installation
 

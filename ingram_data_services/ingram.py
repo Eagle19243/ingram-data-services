@@ -74,66 +74,6 @@ def get_config():
     raise RuntimeError(f'"{config_file}" does not exist')
 
 
-def download_file(remote_file, download_dir):
-    """Helper to allow multiprocessing."""
-    # Create the local file path
-    local_file = get_local_path(remote_file, download_dir)
-
-    # We can't download multiple files from FTP at once, so we need to
-    # create an FTP instance and login for each download
-    with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
-        try:
-            ftp.download_file(remote_file, local_file)
-        except KeyboardInterrupt:
-            pool.terminate()
-
-
-def download_data_files(download_dir):
-    logger.info("Download Ingram data files ...")
-    with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
-        logger.info(f"Connected to {host}...")
-        logger.info(f"Welcome message: {ftp.getwelcome()}")
-
-        cover_paths = ftp.get_cover_files(folder=cover_size)
-        onix_paths = ftp.get_onix_files()
-        onix_bklst_paths = ftp.get_onix_bklst_files()
-        ref_paths = ftp.get_reference_files()
-
-        # Assemble our tuple of args for the download method
-        cover_paths = [(p, download_dir) for p in cover_paths]
-        onix_paths = [(p, download_dir) for p in onix_paths]
-        onix_bklst_paths = [(p, download_dir) for p in onix_bklst_paths]
-        ref_paths = [(p, download_dir) for p in ref_paths]
-
-    # Process the downloads
-    with multiprocessing.Pool() as pool:
-        pool.starmap(download_file, cover_paths)
-        pool.starmap(download_file, onix_paths)
-        pool.starmap(download_file, onix_bklst_paths)
-        # pool.starmap(download_file, ref_paths)
-    # pool.close()
-    # pool.join()
-
-
-def extract_cover_zip(file, target_dir):
-    """Extract files one by one so we can organize into folders
-    based on last 4 of ISBN for faster access."""
-    with ZipFile(file, "r") as zf:
-        filenames = zf.namelist()
-        for f in filenames:
-            subdir, _ = os.path.splitext(f)
-            filepath = os.path.join(target_dir, subdir[-4:], f)
-            # We only extract if the file doesn't exist
-            if not os.path.exists(filepath):
-                zf.extract(f, os.path.join(target_dir, subdir[-4:]))
-
-
-def extract_zip(file, target_dir):
-    """Extract files from zip"""
-    with ZipFile(file, "r") as zf:
-        zf.extractall(target_dir)
-
-
 def setup_logger(log_file):
     """Setup logger"""
     logger.setLevel(logging.DEBUG)
@@ -159,6 +99,66 @@ def setup_logger(log_file):
     # Add logging handlers
     logger.addHandler(fh)
     logger.addHandler(ch)
+
+
+def download_file(remote_file, download_dir):
+    """Helper to allow multiprocessing."""
+    # Create the local file path
+    local_file = get_local_path(remote_file, download_dir)
+
+    # We can't download multiple files from FTP at once, so we need to
+    # create an FTP instance and login for each download
+    with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
+        try:
+            ftp.download_file(remote_file, local_file)
+        except KeyboardInterrupt:
+            pool.terminate()
+
+
+def download_data_files(download_dir):
+    logger.info("Download Ingram data files ...")
+    with IngramFTP(host=host, user=user, passwd=passwd) as ftp:
+        logger.info(f"Connected to {host}...")
+        logger.info(f"Welcome message: {ftp.getwelcome()}")
+
+        cover_paths = ftp.get_cover_files(folder=cover_size)
+        print(cover_paths)
+        logger.info(f"{len(cover_paths)} cover zips found")
+        onix_paths = ftp.get_onix_files()
+        onix_bklst_paths = ftp.get_onix_bklst_files()
+        ref_paths = ftp.get_reference_files()
+
+        # Assemble our tuple of args for the download method
+        cover_paths = [(p, download_dir) for p in cover_paths]
+        onix_paths = [(p, download_dir) for p in onix_paths]
+        onix_bklst_paths = [(p, download_dir) for p in onix_bklst_paths]
+        ref_paths = [(p, download_dir) for p in ref_paths]
+
+    # Process the downloads
+    with multiprocessing.Pool() as pool:
+        pool.starmap(download_file, cover_paths)
+        pool.starmap(download_file, onix_paths)
+        pool.starmap(download_file, onix_bklst_paths)
+        pool.starmap(download_file, ref_paths)
+
+
+def extract_cover_zip(file, target_dir):
+    """Extract files one by one so we can organize into folders
+    based on last 4 of ISBN for faster access."""
+    with ZipFile(file, "r") as zf:
+        filenames = zf.namelist()
+        for f in filenames:
+            subdir, _ = os.path.splitext(f)
+            filepath = os.path.join(target_dir, subdir[-4:], f)
+            # We only extract if the file doesn't exist
+            if not os.path.exists(filepath):
+                zf.extract(f, os.path.join(target_dir, subdir[-4:]))
+
+
+def extract_zip(file, target_dir):
+    """Extract files from zip"""
+    with ZipFile(file, "r") as zf:
+        zf.extractall(target_dir)
 
 
 def main():
@@ -187,6 +187,8 @@ def main():
     # Download data files
     download_data_files(download_dir)
 
+    return
+
     # Unzip cover files
     logger.info("Unzip cover zips ...")
     cover_zips = get_files_matching(os.path.join(download_dir, "Imageswk"), "*.zip")
@@ -198,8 +200,6 @@ def main():
     # Use multiprocessing to unzip multiple files at once
     with multiprocessing.Pool() as pool:
         pool.starmap(extract_cover_zip, cover_args)
-
-    return
 
     # Unzip onix files
     logger.info("Unzip ONIX zips ...")

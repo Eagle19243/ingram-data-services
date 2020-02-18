@@ -4,7 +4,7 @@ import os
 from ftplib import FTP
 
 from ingram_data_services import logger
-from ingram_data_services.utils import is_downloaded, save_history
+from ingram_data_services.utils import save_history
 
 
 class RemoteFile:
@@ -39,15 +39,18 @@ class IngramFTP(FTP):
         """Determine if we need to download the file."""
         # If the file doesn't exist, then download it
         if not os.path.exists(local_file):
+            # logger.debug(f'"{local_file}" does not exist')
             return False
 
-        # If we get here, we have a local file so let's check the size
-        remote_size = self.size(remote_file)
+        # If the local/remote files sizes do not match, then download it
         local_size = os.path.getsize(local_file)
+        remote_size = self.size(remote_file)
         if local_size != remote_size:
+            # logger.debug(f'File size mismatch "{local_file}": {local_size} != {remote_size}')
             return False
 
         # Passed both exists and filesize checks, assume we have it
+        # logger.debug(f'"{local_file}" exists')
         return True
 
     def download_file(self, remote_file, local_file, force=False):
@@ -62,7 +65,6 @@ class IngramFTP(FTP):
             logger.info(f'Downloading "{remote_file}" => "{local_file}" ...')
             with open(local_file, "wb") as fp:
                 self.retrbinary(f"RETR {remote_file}", fp.write)
-            logger.info(f'"{local_file}" download complete')
             # save_history(local_file, remote_file_size, modified_date)
 
     def get_cover_files(self, folder):
@@ -81,11 +83,11 @@ class IngramFTP(FTP):
         onix_dir = "/ONIX"
         dirs = [
             "Active",
-            "Active_Split",
+            # "Active_Split",
             "Extended",
-            "Extended_Split",
+            # "Extended_Split",
             "NotAvailable",
-            "NotAvailable_Split",
+            # "NotAvailable_Split",
         ]
         for d in dirs:
             current_dir = os.path.join(onix_dir, d)
