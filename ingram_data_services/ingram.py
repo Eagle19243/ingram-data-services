@@ -24,7 +24,7 @@ from zipfile import ZipFile
 from ingram_data_services import logger
 from ingram_data_services.__version__ import __version__
 from ingram_data_services.ftp import IngramFTP
-from ingram_data_services.utils import get_files_matching, get_local_path, set_log_dir
+from ingram_data_services.utils import get_files_matching, get_local_path, set_log_dir, save_run_history
 
 host = None
 user = None
@@ -123,7 +123,7 @@ def download_data_files(download_dir):
         logger.info(f"Welcome message: {ftp.getwelcome()}")
 
         cover_paths = ftp.get_cover_files(folder=cover_size)
-        print(cover_paths)
+        # print(cover_paths)
         logger.info(f"{len(cover_paths)} cover zips found")
         onix_paths = ftp.get_onix_files()
         onix_bklst_paths = ftp.get_onix_bklst_files()
@@ -162,6 +162,18 @@ def extract_zip(file, target_dir):
         zf.extractall(target_dir)
 
 
+def unzip_threaded(data_zips, download_dir, working_dir):
+    zip_args = []
+    for z in data_zips:
+        extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
+        extract_dir = os.path.join(working_dir, extract_dir)
+        zip_args.append((z, extract_dir))
+
+    # Use multiprocessing to unzip multiple files at once
+    with multiprocessing.Pool() as pool:
+        pool.starmap(extract_zip, zip_args)
+
+
 def main():
     global host, user, passwd, pool, cover_size
 
@@ -188,10 +200,6 @@ def main():
     # Download data files
     download_data_files(download_dir)
 
-
-
-    return
-
     # Unzip cover files
     logger.info("Unzip cover zips ...")
     cover_zips = get_files_matching(os.path.join(download_dir, "Imageswk"), "*.zip")
@@ -207,24 +215,16 @@ def main():
     # Unzip onix files
     logger.info("Unzip ONIX zips ...")
     data_zips = get_files_matching(os.path.join(download_dir, "ONIX"), "*.zip")
-
-    zip_args = []
-    for z in data_zips:
-        extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
-        extract_dir = os.path.join(working_dir, extract_dir)
-        zip_args.append((z, extract_dir))
-
-    # Use multiprocessing to unzip multiple files at once
-    with multiprocessing.Pool() as pool:
-        pool.starmap(extract_zip, zip_args)
+    unzip_threaded(data_zips, download_dir, working_dir)
 
     # Unzip onix backlist files
     # logger.info("Unzip ONIX_BKLST zips ...")
     # data_zips = get_files_matching(os.path.join(download_dir, "ONIX_BKLST"), "*.zip")
-    # for z in data_zips:
-    #     extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
-    #     extract_dir = os.path.join(working_dir, extract_dir)
-    #     extract_zip(z, extract_dir)
+    # unzip_threaded(data_zips, download_dir, working_dir)
+
+    # Save run history, on next run we will only be interested in files
+    # newer than the most recent run date
+    save_run_history()
 
 
 if __name__ == "__main__":

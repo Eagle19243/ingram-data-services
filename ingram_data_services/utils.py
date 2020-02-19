@@ -2,6 +2,9 @@
 
 import fnmatch
 import os
+from datetime import datetime
+
+from dateutil import parser, tz
 
 log_dir = None
 
@@ -33,6 +36,16 @@ def save_history(target_filename, remote_file_size, modified_date):
     """Save downloaded filename, filesize, modified date to log file"""
     with open(os.path.join(log_dir, "download_history.log"), "a") as fp:
         fp.write(f"{target_filename} {modified_date} {remote_file_size}\n")
+
+
+def save_run_history(tz_string="US/Eastern"):
+    """Get current time in EST and save it to a file."""
+    utc = tz.gettz("UTC")
+    ts = datetime.now(tz=utc)
+    est = tz.gettz(tz_string)
+    run_datetime = ts.astimezone(est)
+    with open(os.path.join(log_dir, "run_history.log"), "a") as fp:
+        fp.write(f"{run_datetime.isoformat()}\n")
 
 
 def is_downloaded(target_filename, remote_file_size, modified_date):
