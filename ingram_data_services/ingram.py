@@ -123,11 +123,13 @@ def download_data_files(download_dir):
         logger.info(f"Welcome message: {ftp.getwelcome()}")
 
         cover_paths = ftp.get_cover_files(folder=cover_size)
-        # print(cover_paths)
         logger.info(f"{len(cover_paths)} cover zips found")
         onix_paths = ftp.get_onix_files()
+        logger.info(f"{len(onix_paths)} ONIX zips found")
         onix_bklst_paths = ftp.get_onix_bklst_files()
+        logger.info(f"{len(onix_bklst_paths)} ONIX BKLST zips found")
         ref_paths = ftp.get_reference_files()
+        logger.info(f"{len(ref_paths)} reference files found")
 
         # Assemble our tuple of args for the download method
         cover_paths = [(p, download_dir) for p in cover_paths]
@@ -162,7 +164,8 @@ def extract_zip(file, target_dir):
         zf.extractall(target_dir)
 
 
-def unzip_threaded(data_zips, download_dir, working_dir):
+def unzip_onix_threaded(data_zips, download_dir, working_dir):
+    """Unzip ONIX zips using multiprocessing."""
     zip_args = []
     for z in data_zips:
         extract_dir = os.path.dirname(z).replace(download_dir, "").lstrip("/")
@@ -172,6 +175,24 @@ def unzip_threaded(data_zips, download_dir, working_dir):
     # Use multiprocessing to unzip multiple files at once
     with multiprocessing.Pool() as pool:
         pool.starmap(extract_zip, zip_args)
+
+
+def unzip_covers_threaded(cover_zips, working_dir):
+    """Unzip cover zips using multiprocessing."""
+    # This is here to prevent an issue where multiple threads were creating
+    # a "FileExistsError" when trying to create a folder at the same time?
+    # To avoid it we create all the folders ahead of time.
+    for i in range(0, 10000):
+        dirname = os.path.join(working_dir, "Imageswk", cover_size, f'{i:04}')
+        os.makedirs(dirname, exist_ok=True)
+
+    cover_args = []
+    for z in cover_zips:
+        cover_args.append((z, os.path.join(working_dir, "Imageswk", cover_size)))
+
+    # Use multiprocessing to unzip multiple files at once
+    with multiprocessing.Pool() as pool:
+        pool.starmap(extract_cover_zip, cover_args)
 
 
 def main():
@@ -203,24 +224,17 @@ def main():
     # Unzip cover files
     logger.info("Unzip cover zips ...")
     cover_zips = get_files_matching(os.path.join(download_dir, "Imageswk"), "*.zip")
-
-    cover_args = []
-    for z in cover_zips:
-        cover_args.append((z, os.path.join(working_dir, "Imageswk", cover_size)))
-
-    # Use multiprocessing to unzip multiple files at once
-    with multiprocessing.Pool() as pool:
-        pool.starmap(extract_cover_zip, cover_args)
+    unzip_covers_threaded(cover_zips, working_dir)
 
     # Unzip onix files
     logger.info("Unzip ONIX zips ...")
     data_zips = get_files_matching(os.path.join(download_dir, "ONIX"), "*.zip")
-    unzip_threaded(data_zips, download_dir, working_dir)
+    unzip_onix_threaded(data_zips, download_dir, working_dir)
 
     # Unzip onix backlist files
-    # logger.info("Unzip ONIX_BKLST zips ...")
-    # data_zips = get_files_matching(os.path.join(download_dir, "ONIX_BKLST"), "*.zip")
-    # unzip_threaded(data_zips, download_dir, working_dir)
+    logger.info("Unzip ONIX_BKLST zips ...")
+    data_zips = get_files_matching(os.path.join(download_dir, "ONIX_BKLST"), "*.zip")
+    unzip_onix_threaded(data_zips, download_dir, working_dir)
 
     # Save run history, on next run we will only be interested in files
     # newer than the most recent run date

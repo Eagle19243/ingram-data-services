@@ -96,11 +96,11 @@ class IngramFTP(FTP):
         onix_dir = "/ONIX"
         dirs = [
             "Active",
-            # "Active_Split",
+            "Active_Split",
             "Extended",
-            # "Extended_Split",
+            "Extended_Split",
             "NotAvailable",
-            # "NotAvailable_Split",
+            "NotAvailable_Split",
         ]
         for d in dirs:
             current_dir = os.path.join(onix_dir, d)
